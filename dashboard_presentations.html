@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Messaging Executive Dashboard</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    
+    <style>
+        :root {
+            --primary-bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-main: #2c3e50;
+            --color-pending: #f39c12;  /* Orange */
+            --color-approved: #27ae60; /* Green */
+            --color-rejected: #c0392b; /* Red */
+        }
+        
+        body {
+            background-color: var(--primary-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-main);
+        }
+
+        .dashboard-header {
+            background: #fff;
+            padding: 20px 0;
+            border-bottom: 1px solid #e9ecef;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            background: var(--card-bg);
+            height: 100%;
+        }
+
+        .card-header {
+            background: transparent;
+            border-bottom: 1px solid #f1f1f1;
+            font-weight: 600;
+            color: #7f8c8d;
+            padding: 15px 20px;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+        
+        .kpi-sub {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .kpi-label {
+            color: #95a5a6;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+            width: 100%;
+            padding: 10px;
+        }
+
+        /* Status Breakdown Table */
+        .status-table th {
+            font-size: 0.8rem;
+            color: #95a5a6;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .status-table td {
+            vertical-align: middle;
+            font-weight: 600;
+        }
+        .status-dot {
+            height: 10px;
+            width: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .bg-pending { background-color: var(--color-pending); }
+        .bg-approved { background-color: var(--color-approved); }
+        .bg-rejected { background-color: var(--color-rejected); }
+
+        .btn-print {
+            border: 1px solid #2c3e50;
+            color: #2c3e50;
+        }
+        .btn-print:hover {
+            background: #2c3e50;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="dashboard-header">
+        <div class="container-fluid px-5">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1 fw-bold text-dark">Notification Request Analysis</h2>
+                    <p class="mb-0 text-muted">Production Environment | Report Date: Jan 17, 2026</p>
+                </div>
+                <button class="btn btn-print btn-sm" onclick="window.print()">
+                    <i class="fas fa-print me-2"></i>Print Dashboard
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container-fluid px-5">
+
+        <div class="row g-4 mb-4">
+            
+            <div class="col-md-3">
+                <div class="card p-4 d-flex flex-column justify-content-center">
+                    <div class="kpi-label mb-2">Total Activity</div>
+                    <div class="d-flex align-items-baseline">
+                        <span class="kpi-value text-dark me-2">43</span>
+                        <span class="text-muted small">Batches</span>
+                    </div>
+                    <div class="kpi-sub">
+                        <i class="fas fa-envelope me-1 opacity-50"></i> 1,484 Messages
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card p-4 d-flex flex-column justify-content-center border-start border-4 border-warning">
+                    <div class="kpi-label mb-2">Pending Action</div>
+                    <div class="d-flex align-items-baseline">
+                        <span class="kpi-value text-warning me-2">31</span>
+                        <span class="text-muted small">Batches</span>
+                    </div>
+                    <div class="kpi-sub text-muted">
+                        1,180 Messages
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-2">
+                <div class="card p-4 d-flex flex-column justify-content-center border-start border-4 border-danger">
+                    <div class="kpi-label mb-2">Rejected</div>
+                    <div class="d-flex align-items-baseline">
+                        <span class="kpi-value text-danger me-2">4</span>
+                        <span class="text-muted small">Batches</span>
+                    </div>
+                    <div class="kpi-sub text-muted">
+                        138 Messages
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body d-flex align-items-center justify-content-between px-4">
+                        <div>
+                            <div class="kpi-label mb-1">Status Share</div>
+                            <div class="display-6 fw-bold text-success">18.6%</div>
+                            <div class="text-muted small mt-1">Approval Rate</div>
+                        </div>
+                        <div style="width: 160px; height: 160px;">
+                            <canvas id="approvalPieChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between">
+                        <span>Daily Trend (Batches & Volume)</span>
+                        <small class="text-muted">Hover bars for message counts</small>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        Detailed Status Breakdown
+                    </div>
+                    <div class="card-body">
+                        <div style="height: 180px; position: relative;" class="mb-4">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                        
+                        <table class="table table-sm status-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th class="text-end">Batches</th>
+                                    <th class="text-end">Messages</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="status-dot bg-pending"></span>Pending</td>
+                                    <td class="text-end">31</td>
+                                    <td class="text-end text-muted">1,180</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="status-dot bg-approved"></span>Approved</td>
+                                    <td class="text-end">8</td>
+                                    <td class="text-end text-muted">166</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="status-dot bg-rejected"></span>Rejected</td>
+                                    <td class="text-end">4</td>
+                                    <td class="text-end text-muted">138</td>
+                                </tr>
+                                <tr class="table-light border-top border-2">
+                                    <td><strong>Total</strong></td>
+                                    <td class="text-end"><strong>43</strong></td>
+                                    <td class="text-end"><strong>1,484</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        Top 5 Facilities: Activity & Status Breakdown
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="height: 400px;">
+                            <canvas id="facilityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-secondary d-flex align-items-center small" role="alert">
+                    <i class="fas fa-info-circle me-3"></i>
+                    <div>
+                        <strong>Test Facility Note:</strong> "Safe Storage" (5 Batches, 69 Messages) is excluded from the production metrics above.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Register DataLabels plugin
+        Chart.register(ChartDataLabels);
+
+        // --- Data Variables ---
+        
+        // 1. Daily Data
+        const days = ['Dec 01', 'Dec 02', 'Dec 05', 'Dec 11', 'Dec 12', 'Dec 17', 'Dec 19', 'Dec 20', 'Dec 21', 'Dec 22', 'Dec 23', 'Dec 27', 'Jan 02', 'Jan 06', 'Jan 09', 'Jan 10', 'Jan 12', 'Jan 13', 'Jan 14'];
+        
+        const dailyPendingB = [3, 4, 1, 1, 2, 0, 0, 1, 1, 4, 1, 2, 2, 1, 1, 1, 2, 2, 2];
+        const dailyPendingV = [75, 311, 49, 13, 27, 0, 0, 36, 16, 71, 15, 30, 201, 14, 17, 11, 48, 139, 107];
+        
+        const dailyApprovedB = [2, 2, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0];
+        const dailyApprovedV = [45, 38, 0, 15, 0, 13, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 45, 0];
+        
+        const dailyRejectedB = [2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0];
+        const dailyRejectedV = [71, 0, 0, 0, 21, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 46, 0];
+
+        // 2. Facility Data
+        const facilities = ['EZ Werks Storage 2', 'Patriot Cache Storage', 'My Garage - Midlothian', 'Ocean Storage - Yorktown', 'My Garage - McClintock'];
+        
+        const facPendingB = [5, 4, 1, 1, 2];
+        const facPendingV = [278, 90, 16, 17, 30];
+        
+        const facApprovedB = [0, 0, 1, 1, 0]; 
+        const facApprovedV = [0, 0, 95, 74, 0];
+        
+        const facRejectedB = [0, 0, 1, 0, 0];
+        const facRejectedV = [0, 0, 110, 0, 0];
+
+
+        // --- Chart Configs ---
+
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' },
+                datalabels: {
+                    color: '#fff',
+                    font: { weight: 'bold', size: 10 },
+                    display: function(context) {
+                        return context.dataset.data[context.dataIndex] > 0;
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            let batches = context.parsed.y || context.parsed;
+                            let volume = context.dataset.volumes[context.dataIndex];
+                            return `${label}: ${batches} Batches | ${volume} Messages`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { stacked: true, grid: { display: false } },
+                y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } }
+            }
+        };
+
+        // 1. Daily Trend Stacked Bar
+        new Chart(document.getElementById('trendChart'), {
+            type: 'bar',
+            data: {
+                labels: days,
+                datasets: [
+                    {
+                        label: 'Pending',
+                        data: dailyPendingB,
+                        volumes: dailyPendingV,
+                        backgroundColor: '#f39c12'
+                    },
+                    {
+                        label: 'Approved',
+                        data: dailyApprovedB,
+                        volumes: dailyApprovedV,
+                        backgroundColor: '#27ae60'
+                    },
+                    {
+                        label: 'Rejected',
+                        data: dailyRejectedB,
+                        volumes: dailyRejectedV,
+                        backgroundColor: '#c0392b'
+                    }
+                ]
+            },
+            options: commonOptions
+        });
+
+        // 2. Facility Stacked Bar
+        new Chart(document.getElementById('facilityChart'), {
+            type: 'bar',
+            data: {
+                labels: facilities,
+                datasets: [
+                    {
+                        label: 'Pending',
+                        data: facPendingB,
+                        volumes: facPendingV,
+                        backgroundColor: '#f39c12'
+                    },
+                    {
+                        label: 'Approved',
+                        data: facApprovedB,
+                        volumes: facApprovedV,
+                        backgroundColor: '#27ae60'
+                    },
+                    {
+                        label: 'Rejected',
+                        data: facRejectedB,
+                        volumes: facRejectedV,
+                        backgroundColor: '#c0392b'
+                    }
+                ]
+            },
+            options: commonOptions
+        });
+
+        // 3. Status Chart (Simple Doughnut)
+        new Chart(document.getElementById('statusChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Pending', 'Approved', 'Rejected'],
+                datasets: [{
+                    data: [31, 8, 4],
+                    backgroundColor: ['#f39c12', '#27ae60', '#c0392b'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '60%',
+                plugins: {
+                    legend: { display: false },
+                    datalabels: { display: false }
+                }
+            }
+        });
+
+        // 4. Approval Share Pie (KPI Section) - With Percentages
+        new Chart(document.getElementById('approvalPieChart'), {
+            type: 'pie',
+            data: {
+                labels: ['Approved', 'Pending', 'Rejected'],
+                datasets: [{
+                    data: [8, 31, 4],
+                    volumes: [166, 1180, 138],
+                    backgroundColor: ['#27ae60', '#f39c12', '#c0392b'],
+                    borderWidth: 1,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    datalabels: {
+                        color: '#fff',
+                        font: { weight: 'bold', size: 11 },
+                        formatter: (value, ctx) => {
+                            let sum = 0;
+                            let dataArr = ctx.chart.data.datasets[0].data;
+                            dataArr.map(data => {
+                                sum += data;
+                            });
+                            let percentage = (value * 100 / sum).toFixed(1) + "%";
+                            return percentage;
+                        },
+                        display: true // Explicitly enabled
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label;
+                                let value = context.parsed;
+                                let vol = context.dataset.volumes[context.dataIndex];
+                                return `${label}: ${value} Batches | ${vol} Messages`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>
