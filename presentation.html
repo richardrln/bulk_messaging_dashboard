@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Messaging Executive Dashboard</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+    <style>
+        :root {
+            --primary-bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-main: #2c3e50;
+            --color-pending:  #f39c12;
+            --color-approved: #27ae60;
+            --color-rejected: #c0392b;
+        }
+        body {
+            background-color: var(--primary-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-main);
+        }
+        .dashboard-header {
+            background: #fff;
+            padding: 20px 0;
+            border-bottom: 1px solid #e9ecef;
+            margin-bottom: 30px;
+        }
+        .card {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            background: var(--card-bg);
+            height: 100%;
+        }
+        .card-header {
+            background: transparent;
+            border-bottom: 1px solid #f1f1f1;
+            font-weight: 600;
+            color: #7f8c8d;
+            padding: 15px 20px;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+        .kpi-value { font-size: 2.5rem; font-weight: 700; line-height: 1.1; }
+        .kpi-sub   { font-size: 1.1rem; font-weight: 600; color: #6c757d; margin-top: 5px; }
+        .kpi-label { color: #95a5a6; font-size: 0.9rem; font-weight: 500; text-transform: uppercase; }
+        .chart-container { position: relative; height: 350px; width: 100%; padding: 10px; }
+        .status-table th { font-size: 0.8rem; color: #95a5a6; text-transform: uppercase; font-weight: 600; }
+        .status-table td { vertical-align: middle; font-weight: 600; }
+        .status-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .bg-pending  { background-color: var(--color-pending); }
+        .bg-approved { background-color: var(--color-approved); }
+        .bg-rejected { background-color: var(--color-rejected); }
+        .btn-print { border: 1px solid #2c3e50; color: #2c3e50; }
+        .btn-print:hover { background: #2c3e50; color: #fff; }
+
+        /* ── Records Table ── */
+        .records-table { font-size: 0.82rem; }
+        .records-table thead th {
+            background: #f8f9fa;
+            font-size: 0.75rem;
+            color: #95a5a6;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+            border-bottom: 2px solid #e9ecef;
+            white-space: nowrap;
+        }
+        .records-table tbody tr { cursor: pointer; transition: background 0.15s; }
+        .records-table tbody tr:hover { background: #fafafa; }
+        .records-table tbody tr.expandable-row td { padding-top: 0; padding-bottom: 0; }
+        .detail-panel {
+            background: #f8f9fa;
+            border-left: 3px solid #dee2e6;
+            padding: 10px 16px;
+            border-radius: 0 4px 4px 0;
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        .detail-panel .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 8px 24px;
+        }
+        .detail-panel .detail-item { display: flex; flex-direction: column; gap: 2px; }
+        .detail-panel .detail-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: #adb5bd;
+            font-weight: 600;
+        }
+        .detail-panel .detail-value { font-weight: 600; color: #495057; font-size: 0.82rem; }
+        .detail-panel .detail-value.approved-color { color: var(--color-approved); }
+        .detail-panel .detail-value.rejected-color { color: var(--color-rejected); }
+
+        .badge-pending  { background: #fff3cd; color: #856404; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
+        .badge-approved { background: #d1e7dd; color: #0a3622; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
+        .badge-rejected { background: #f8d7da; color: #58151c; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
+
+        .toggle-icon { font-size: 0.7rem; color: #adb5bd; transition: transform 0.2s; }
+        .toggle-icon.open { transform: rotate(90deg); }
+
+        .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        .filter-btn {
+            border: 1px solid #dee2e6;
+            background: #fff;
+            color: #6c757d;
+            font-size: 0.78rem;
+            padding: 4px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-weight: 500;
+        }
+        .filter-btn:hover { border-color: #adb5bd; }
+        .filter-btn.active-all      { background: #2c3e50; color: #fff; border-color: #2c3e50; }
+        .filter-btn.active-pending  { background: var(--color-pending);  color: #fff; border-color: var(--color-pending); }
+        .filter-btn.active-approved { background: var(--color-approved); color: #fff; border-color: var(--color-approved); }
+        .filter-btn.active-rejected { background: var(--color-rejected); color: #fff; border-color: var(--color-rejected); }
+
+        .search-input {
+            border: 1px solid #dee2e6;
+            border-radius: 20px;
+            padding: 4px 14px;
+            font-size: 0.78rem;
+            outline: none;
+            width: 200px;
+            color: #495057;
+        }
+        .search-input:focus { border-color: #adb5bd; }
+
+        .table-meta { font-size: 0.75rem; color: #adb5bd; }
+    </style>
+</head>
+<body>
+
+<header class="dashboard-header">
+    <div class="container-fluid px-5">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="mb-1 fw-bold text-dark">Notification Request Analysis</h2>
+                <p class="mb-0 text-muted">Production Environment | Report Date: Mar 20, 2026</p>
+            </div>
+            <button class="btn btn-print btn-sm" onclick="window.print()">
+                <i class="fas fa-print me-2"></i>Print Dashboard
+            </button>
+        </div>
+    </div>
+</header>
+
+<div class="container-fluid px-5">
+
+    <!-- KPI Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card p-4 d-flex flex-column justify-content-center">
+                <div class="kpi-label mb-2">Total Activity</div>
+                <div class="d-flex align-items-baseline">
+                    <span class="kpi-value text-dark me-2">114</span>
+                    <span class="text-muted small">Batches</span>
+                </div>
+                <div class="kpi-sub"><i class="fas fa-envelope me-1 opacity-50"></i> 5,393 Messages</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-4 d-flex flex-column justify-content-center border-start border-4 border-warning">
+                <div class="kpi-label mb-2">Pending Action</div>
+                <div class="d-flex align-items-baseline">
+                    <span class="kpi-value text-warning me-2">48</span>
+                    <span class="text-muted small">Batches</span>
+                </div>
+                <div class="kpi-sub text-muted">2,545 Messages</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card p-4 d-flex flex-column justify-content-center border-start border-4 border-danger">
+                <div class="kpi-label mb-2">Rejected</div>
+                <div class="d-flex align-items-baseline">
+                    <span class="kpi-value text-danger me-2">26</span>
+                    <span class="text-muted small">Batches</span>
+                </div>
+                <div class="kpi-sub text-muted">538 Messages</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body d-flex align-items-center justify-content-between px-4">
+                    <div>
+                        <div class="kpi-label mb-1">Status Share</div>
+                        <div class="display-6 fw-bold text-success">35.1%</div>
+                        <div class="text-muted small mt-1">Approval Rate</div>
+                    </div>
+                    <div style="width:160px;height:160px;">
+                        <canvas id="approvalPieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between">
+                    <span>Daily Trend (Batches &amp; Volume)</span>
+                    <small class="text-muted">Hover bars for message counts</small>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container"><canvas id="trendChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">Detailed Status Breakdown</div>
+                <div class="card-body">
+                    <div style="height:180px;position:relative;" class="mb-4">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                    <table class="table table-sm status-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th class="text-end">Batches</th>
+                                <th class="text-end">Messages</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="status-dot bg-pending"></span>Pending</td>
+                                <td class="text-end">48</td>
+                                <td class="text-end text-muted">2,545</td>
+                            </tr>
+                            <tr>
+                                <td><span class="status-dot bg-approved"></span>Approved</td>
+                                <td class="text-end">40</td>
+                                <td class="text-end text-muted">2,310</td>
+                            </tr>
+                            <tr>
+                                <td><span class="status-dot bg-rejected"></span>Rejected</td>
+                                <td class="text-end">26</td>
+                                <td class="text-end text-muted">538</td>
+                            </tr>
+                            <tr class="table-light border-top border-2">
+                                <td><strong>Total</strong></td>
+                                <td class="text-end"><strong>114</strong></td>
+                                <td class="text-end"><strong>5,393</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Facility Chart -->
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">Top 10 Facilities: Activity &amp; Status Breakdown</div>
+                <div class="card-body">
+                    <div class="chart-container" style="height:420px;">
+                        <canvas id="facilityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── All Records Table ── -->
+    <div class="row g-4 mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>All Notification Requests</span>
+                    <span class="table-meta" id="row-count"></span>
+                </div>
+                <div class="card-body">
+                    <!-- Filter bar -->
+                    <div class="filter-bar mb-3">
+                        <button class="filter-btn active-all" onclick="setFilter('all', this)">All</button>
+                        <button class="filter-btn" onclick="setFilter('pending', this)">
+                            <span class="status-dot bg-pending" style="vertical-align:middle;"></span>Pending
+                        </button>
+                        <button class="filter-btn" onclick="setFilter('approved', this)">
+                            <span class="status-dot bg-approved" style="vertical-align:middle;"></span>Approved
+                        </button>
+                        <button class="filter-btn" onclick="setFilter('rejected', this)">
+                            <span class="status-dot bg-rejected" style="vertical-align:middle;"></span>Rejected
+                        </button>
+                        <input type="text" class="search-input ms-auto" id="search-box" placeholder="🔍  Search facility..." oninput="renderTable()">
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm records-table mb-0" id="records-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:32px;"></th>
+                                    <th>Facility</th>
+                                    <th>Submitted</th>
+                                    <th class="text-center">Messages</th>
+                                    <th class="text-center">Status</th>
+                                    <th>Resolved By</th>
+                                    <th>Resolved At</th>
+                                </tr>
+                            </thead>
+                            <tbody id="records-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Note -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-secondary d-flex align-items-center small" role="alert">
+                <i class="fas fa-info-circle me-3"></i>
+                <div>
+                    <strong>Test Facility Note:</strong> "EZMove Test Facility" (3 Batches, 65 Messages) is excluded from the production metrics above.
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /container -->
+
+<script>
+    Chart.register(ChartDataLabels);
+
+    // ── Chart data ──
+    const days = ['Nov 28','Nov 29','Nov 30','Dec 1','Dec 2','Dec 5','Dec 11','Dec 12','Dec 17','Dec 19','Dec 20','Dec 21','Dec 22','Dec 23','Dec 27','Jan 2','Jan 6','Jan 9','Jan 10','Jan 12','Jan 13','Jan 14','Jan 19','Jan 20','Jan 21','Jan 22','Jan 23','Jan 26','Feb 2','Feb 8','Feb 10','Feb 24','Feb 27','Feb 28','Mar 2','Mar 3','Mar 4','Mar 5','Mar 7','Mar 9','Mar 10','Mar 12','Mar 13','Mar 19','Mar 20'];
+    const pB = [9,5,2,1,2,0,0,2,0,0,0,0,2,0,2,0,1,0,1,2,2,2,1,4,1,0,0,0,1,0,1,0,1,1,0,0,0,0,0,2,0,0,1,1,1];
+    const pV = [116,951,285,16,271,0,0,27,0,0,0,0,32,0,30,0,14,0,11,48,139,107,10,67,34,0,0,0,17,0,16,0,148,11,0,0,0,0,0,99,0,0,13,62,21];
+    const aB = [0,1,3,4,4,1,2,0,1,1,1,1,2,1,0,1,0,1,0,0,1,0,1,1,0,0,1,1,0,1,0,0,2,1,1,1,1,1,0,1,1,1,0,0,0];
+    const aV = [0,541,795,104,78,49,28,0,13,10,36,16,39,15,0,181,0,17,0,0,45,0,15,12,0,0,14,12,0,40,0,0,72,14,26,10,11,11,0,70,26,10,0,0,0];
+    const rB = [0,13,4,2,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,1,0,0,0];
+    const rV = [0,264,54,71,0,0,0,21,0,0,0,0,0,0,0,20,0,0,0,0,46,0,0,0,0,27,0,0,0,0,0,13,0,0,0,0,0,0,11,0,0,11,0,0,0];
+
+    const facilities = ['Storage Sense - Sulphur','EZ Werks Storage 2','Storage Sense - Port Arthur','Patriot Cache Storage','Storage Sense - Shreveport','My Garage - Midlothian','My Garage - McClintock','Available Self Storage','GuardBox Storage - Troy','Diverse Storage'];
+    const fPB=[3,5,1,0,0,1,2,1,2,2], fPV=[39,278,10,0,0,16,30,12,21,50];
+    const fAB=[2,0,1,4,3,1,1,1,1,0], fAV=[25,0,28,90,212,45,14,19,11,0];
+    const fRB=[2,0,3,0,0,1,0,1,0,0], fRV=[27,0,93,0,0,46,0,12,0,0];
+
+    const commonOptions = {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'bottom' },
+            datalabels: { color:'#fff', font:{weight:'bold',size:10}, display: ctx => ctx.dataset.data[ctx.dataIndex] > 0 },
+            tooltip: { callbacks: { label(c) { return `${c.dataset.label}: ${c.parsed.y} Batches | ${c.dataset.volumes[c.dataIndex]} Messages`; } } }
+        },
+        scales: {
+            x: { stacked:true, grid:{display:false}, ticks:{maxRotation:45,font:{size:10}} },
+            y: { stacked:true, beginAtZero:true, ticks:{precision:0} }
+        }
+    };
+
+    new Chart(document.getElementById('trendChart'), {
+        type:'bar',
+        data:{ labels:days, datasets:[
+            {label:'Pending',  data:pB, volumes:pV, backgroundColor:'#f39c12'},
+            {label:'Approved', data:aB, volumes:aV, backgroundColor:'#27ae60'},
+            {label:'Rejected', data:rB, volumes:rV, backgroundColor:'#c0392b'}
+        ]},
+        options: commonOptions
+    });
+
+    new Chart(document.getElementById('facilityChart'), {
+        type:'bar',
+        data:{ labels:facilities, datasets:[
+            {label:'Pending',  data:fPB, volumes:fPV, backgroundColor:'#f39c12'},
+            {label:'Approved', data:fAB, volumes:fAV, backgroundColor:'#27ae60'},
+            {label:'Rejected', data:fRB, volumes:fRV, backgroundColor:'#c0392b'}
+        ]},
+        options:{ ...commonOptions, scales:{ x:{stacked:true,grid:{display:false},ticks:{maxRotation:15,font:{size:11}}}, y:{stacked:true,beginAtZero:true,ticks:{precision:0}} } }
+    });
+
+    new Chart(document.getElementById('statusChart'), {
+        type:'doughnut',
+        data:{ labels:['Pending','Approved','Rejected'], datasets:[{data:[48,40,26],backgroundColor:['#f39c12','#27ae60','#c0392b'],borderWidth:2,borderColor:'#fff'}] },
+        options:{ responsive:true, maintainAspectRatio:false, cutout:'60%', plugins:{legend:{display:false},datalabels:{display:false}} }
+    });
+
+    new Chart(document.getElementById('approvalPieChart'), {
+        type:'pie',
+        data:{ labels:['Approved','Pending','Rejected'], datasets:[{data:[40,48,26],volumes:[2310,2545,538],backgroundColor:['#27ae60','#f39c12','#c0392b'],borderWidth:1,borderColor:'#fff'}] },
+        options:{ responsive:true, maintainAspectRatio:false,
+            plugins:{ legend:{display:false},
+                datalabels:{ color:'#fff', font:{weight:'bold',size:11}, formatter:(v,ctx)=>{ const s=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0); return (v*100/s).toFixed(1)+'%'; }, display:true },
+                tooltip:{ callbacks:{ label(c){ return `${c.label}: ${c.parsed} Batches | ${c.dataset.volumes[c.dataIndex]} Messages`; } } }
+            }
+        }
+    });
+
+    // ── Records data ──
+    const RECORDS = [
+        {org:"StorTropolis - Olathe",       inserted:"2026-03-20 02:03",resolution:"pending",  count:21,  approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Storage Sense - Houston",     inserted:"2026-03-19 02:07",resolution:"pending",  count:62,  approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Nest Storage",                inserted:"2026-03-13 23:57",resolution:"pending",  count:13,  approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"North West Hills Self Storage",inserted:"2026-03-12 17:52",resolution:"approved",count:10,  approved_at:"2026-03-19 14:10",approved_by:"Facility Manager", rejected_at:"",   rejected_by:""},
+        {org:"My Garage Rancier",           inserted:"2026-03-12 17:18",resolution:"rejected", count:11,  approved_at:"",            approved_by:"",                 rejected_at:"2026-03-12 19:25",rejected_by:"MGS Rancier"},
+        {org:"AAA Self Storage - Hockley",  inserted:"2026-03-10 14:28",resolution:"approved", count:26,  approved_at:"2026-03-19 18:53",approved_by:"Facility Manager", rejected_at:"",   rejected_by:""},
+        {org:"Southlake Storage",           inserted:"2026-03-09 14:50",resolution:"pending",  count:52,  approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Bee Cave Storage",            inserted:"2026-03-09 12:43",resolution:"pending",  count:47,  approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Storage Center at Craig Ranch",inserted:"2026-03-09 12:12",resolution:"approved",count:70,  approved_at:"2026-03-19 15:15",approved_by:"Facility Manager", rejected_at:"",   rejected_by:""},
+        {org:"Lakeline Storage",            inserted:"2026-03-07 22:34",resolution:"rejected", count:11,  approved_at:"",            approved_by:"",                 rejected_at:"2026-03-11 15:29",rejected_by:"Facility Manager"},
+        {org:"StorQuest Milpitas",          inserted:"2026-03-05 09:19",resolution:"approved", count:11,  approved_at:"2026-03-19 19:30",approved_by:"Facility Manager", rejected_at:"",   rejected_by:""},
+        {org:"Memorial Drive Storage",      inserted:"2026-03-04 18:06",resolution:"approved", count:11,  approved_at:"2026-03-19 16:49",approved_by:"Facility Manager", rejected_at:"",   rejected_by:""},
+        {org:"Storage Sense - Hammonton",   inserted:"2026-03-03 02:19",resolution:"approved", count:10,  approved_at:"2026-03-04 17:04",approved_by:"Beckie McClain",  rejected_at:"",   rejected_by:""},
+        {org:"Storage Sense - E Bert Kouns",inserted:"2026-03-02 01:22",resolution:"approved", count:26,  approved_at:"2026-03-02 01:29",approved_by:"Beckie McClain",  rejected_at:"",   rejected_by:""},
+        {org:"My Garage - McClintock",      inserted:"2026-02-28 20:15",resolution:"approved", count:14,  approved_at:"2026-03-05 00:13",approved_by:"MGS McClintock",  rejected_at:"",   rejected_by:""},
+        {org:"My Garage Self Storage - Remcon",inserted:"2026-02-28 20:13",resolution:"pending",count:11, approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Hayward Storage",             inserted:"2026-02-27 13:16",resolution:"pending",  count:148, approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Central Illinois Storage",    inserted:"2026-02-27 02:42",resolution:"approved", count:55,  approved_at:"2026-03-19 20:58",approved_by:"Facility Manager", rejected_at:"",   rejected_by:""},
+        {org:"Storage Sense - Shreveport (Feb)",inserted:"2026-02-27 02:04",resolution:"approved",count:17,approved_at:"2026-03-01 21:37",approved_by:"Beckie McClain", rejected_at:"",   rejected_by:""},
+        {org:"Handy Storage",               inserted:"2026-02-24 10:32",resolution:"rejected", count:13,  approved_at:"",            approved_by:"",                 rejected_at:"2026-03-13 00:24",rejected_by:"Colleen Barraclough"},
+        {org:"Diverse Storage (Feb)",       inserted:"2026-02-10 19:01",resolution:"pending",  count:16,  approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Storage Depot of Gainesville GA",inserted:"2026-02-08 02:02",resolution:"approved",count:40,approved_at:"2026-02-09 19:37",approved_by:"mj uat somers",  rejected_at:"",   rejected_by:""},
+        {org:"Another Closet - Spring Branch",inserted:"2026-02-02 07:09",resolution:"pending", count:17, approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Storage Sense - Clements Ferry",inserted:"2026-01-26 02:10",resolution:"approved",count:12, approved_at:"2026-03-02 02:18",approved_by:"Beckie McClain",  rejected_at:"",   rejected_by:""},
+        {org:"Storage Sense - Shreveport (Jan 23)",inserted:"2026-01-23 23:56",resolution:"approved",count:14,approved_at:"2026-01-24 15:04",approved_by:"Beckie McClain",rejected_at:"",  rejected_by:""},
+        {org:"A Storage Inn - Fenton (rejected)",inserted:"2026-01-22 14:09",resolution:"rejected",count:27,approved_at:"",           approved_by:"",                 rejected_at:"2026-03-12 15:46",rejected_by:"Connor Coultas"},
+        {org:"A Storage Inn - Fenton (pending)",inserted:"2026-01-21 08:14",resolution:"pending",count:34, approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Advantage Self Storage - Piney Creek",inserted:"2026-01-20 11:11",resolution:"pending",count:11,approved_at:"",         approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Advantage Self Storage - Tiverton",inserted:"2026-01-20 08:49",resolution:"approved",count:12,approved_at:"2026-03-19 17:48",approved_by:"Facility Manager",rejected_at:"", rejected_by:""},
+        {org:"Advantage Self Storage - Marion Quimby",inserted:"2026-01-20 08:35",resolution:"pending",count:10,approved_at:"",       approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Arvada West Storage",         inserted:"2026-01-20 08:34",resolution:"pending",  count:12,  approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Diverse Storage (Jan)",       inserted:"2026-01-20 02:19",resolution:"pending",  count:34,  approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"First Storage Loop",          inserted:"2026-01-19 19:50",resolution:"pending",  count:10,  approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Ocean Storage - Towne Point (Jan)",inserted:"2026-01-19 02:16",resolution:"approved",count:15,approved_at:"2026-03-11 14:41",approved_by:"Beckie McClain",rejected_at:"",   rejected_by:""},
+        {org:"EZ Werks Storage 2 (Jan 14a)",inserted:"2026-01-14 03:02",resolution:"pending",  count:66,  approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"EZ Werks Storage 2 (Jan 14b)",inserted:"2026-01-14 02:42",resolution:"pending",  count:41,  approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"My Garage - Midlothian (approved)",inserted:"2026-01-13 16:55",resolution:"approved",count:45,approved_at:"2026-01-13 18:00",approved_by:"MGS Midlothian", rejected_at:"", rejected_by:""},
+        {org:"My Garage - Midlothian (rejected)",inserted:"2026-01-13 07:24",resolution:"rejected",count:46,approved_at:"",           approved_by:"",                 rejected_at:"2026-01-13 14:54",rejected_by:"MGS Midlothian"},
+        {org:"EZ Werks Storage 2 (Jan 13a)",inserted:"2026-01-13 02:44",resolution:"pending",  count:73,  approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"EZ Werks Storage 2 (Jan 13b)",inserted:"2026-01-13 02:24",resolution:"pending",  count:66,  approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"EZ Werks Storage 2 (Jan 12)",inserted:"2026-01-12 17:10",resolution:"pending",   count:32,  approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Storage Sense - Memphis",     inserted:"2026-01-12 02:05",resolution:"pending",  count:16,  approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"StorCo Storage - St. Peters", inserted:"2026-01-10 16:49",resolution:"pending",  count:11,  approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Ocean Storage - Yorktown (Jan)",inserted:"2026-01-09 15:56",resolution:"approved",count:17, approved_at:"2026-03-10 15:38",approved_by:"Beckie McClain",  rejected_at:"",   rejected_by:""},
+        {org:"EXTRA STORAGE",               inserted:"2026-01-06 20:33",resolution:"pending",  count:14,  approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Meyer Park Storage Center",   inserted:"2026-01-02 02:31",resolution:"rejected", count:20,  approved_at:"",            approved_by:"",                 rejected_at:"2026-03-13 17:07",rejected_by:"Christine Morin"},
+        {org:"Storage Sense - Shreveport (Jan 2)",inserted:"2026-01-02 02:20",resolution:"approved",count:181,approved_at:"2026-01-25 20:16",approved_by:"Beckie McClain",rejected_at:"", rejected_by:""},
+        {org:"My Garage - McClintock (Dec 27a)",inserted:"2025-12-27 09:00",resolution:"pending",count:15, approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"My Garage - McClintock (Dec 27b)",inserted:"2025-12-27 07:02",resolution:"pending",count:15, approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Patriot Cache Storage (Dec 23)",inserted:"2025-12-23 06:06",resolution:"approved",count:15, approved_at:"2026-03-19 14:00",approved_by:"Patriot Cache",   rejected_at:"",   rejected_by:""},
+        {org:"Easy Stop Storage - Bushland", inserted:"2025-12-22 23:24",resolution:"pending", count:11,  approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Patriot Cache Storage (Dec 22a)",inserted:"2025-12-22 22:06",resolution:"approved",count:18,approved_at:"2026-03-19 14:00",approved_by:"Patriot Cache",  rejected_at:"",   rejected_by:""},
+        {org:"Patriot Cache Storage (Dec 22b)",inserted:"2025-12-22 21:46",resolution:"approved",count:21,approved_at:"2026-03-19 14:00",approved_by:"Patriot Cache",  rejected_at:"",   rejected_by:""},
+        {org:"Easy Stop Storage - Amarillo", inserted:"2025-12-22 21:45",resolution:"pending", count:21,  approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Ocean Storage - Towne Point (Dec)",inserted:"2025-12-21 02:28",resolution:"approved",count:16,approved_at:"2026-03-11 14:41",approved_by:"Beckie McClain",rejected_at:"",   rejected_by:""},
+        {org:"Patriot Cache Storage (Dec 20)",inserted:"2025-12-20 03:18",resolution:"approved",count:36,approved_at:"2026-03-19 14:00", approved_by:"Patriot Cache",  rejected_at:"",   rejected_by:""},
+        {org:"Easy Stop Storage - Sapulpa South",inserted:"2025-12-19 16:21",resolution:"approved",count:10,approved_at:"2025-12-19 16:21",approved_by:"ESS Sapulpa South",rejected_at:"",rejected_by:""},
+        {org:"Ocean Storage - Yorktown (Dec)",inserted:"2025-12-17 15:07",resolution:"approved",count:13,approved_at:"2026-01-08 06:10",  approved_by:"Beckie McClain",  rejected_at:"",  rejected_by:""},
+        {org:"LockSmart Climate Storage",   inserted:"2025-12-12 17:34",resolution:"pending",  count:10,  approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Spicewood Super-Storage",     inserted:"2025-12-12 16:17",resolution:"pending",  count:17,  approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Home Team Storage",           inserted:"2025-12-12 16:16",resolution:"rejected", count:21,  approved_at:"",            approved_by:"",                 rejected_at:"2025-12-12 17:17",rejected_by:"Fayad Contract"},
+        {org:"B&G Storage - Atmore",        inserted:"2025-12-11 02:24",resolution:"approved", count:13,  approved_at:"2026-03-12 14:32",approved_by:"Beckie McClain",  rejected_at:"",   rejected_by:""},
+        {org:"B&G Storage - Atmore - Trammell",inserted:"2025-12-11 02:06",resolution:"approved",count:15,approved_at:"2025-12-11 13:33",approved_by:"Beckie McClain",  rejected_at:"",   rejected_by:""},
+        {org:"A Storage Inn Ballwin",       inserted:"2025-12-05 22:47",resolution:"approved", count:49,  approved_at:"2026-03-19 13:52",approved_by:"Facility Manager", rejected_at:"",   rejected_by:""},
+        {org:"Storage Sense - Port Arthur (Dec 2 approved)",inserted:"2025-12-02 02:50",resolution:"approved",count:28,approved_at:"2026-02-26 23:28",approved_by:"Beckie McClain",rejected_at:"",rejected_by:""},
+        {org:"Storage Sense - Reading (Dec 2)",inserted:"2025-12-02 02:37",resolution:"approved",count:19,approved_at:"2025-12-30 14:41",approved_by:"Beckie McClain",  rejected_at:"",   rejected_by:""},
+        {org:"Storage Sense - Sulphur (Dec 2)",inserted:"2025-12-02 02:33",resolution:"approved",count:12,approved_at:"2026-03-05 14:49",approved_by:"Beckie McClain",  rejected_at:"",   rejected_by:""},
+        {org:"Available Self Storage (Dec 2)",inserted:"2025-12-02 02:26",resolution:"approved",count:19,approved_at:"2025-12-26 18:47",  approved_by:"Facility Manager", rejected_at:"",  rejected_by:""},
+        {org:"Galveston Climate Storage",   inserted:"2025-12-02 02:17",resolution:"pending",  count:10,  approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Winter's Storage Roanoke",    inserted:"2025-12-02 00:00",resolution:"pending",  count:261, approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Storage Sense - Moss Bluff",  inserted:"2025-12-01 23:05",resolution:"approved", count:46,  approved_at:"2026-03-16 00:18",approved_by:"Beckie McClain",  rejected_at:"",   rejected_by:""},
+        {org:"Storage Sense - Reading (Dec 1)",inserted:"2025-12-01 21:52",resolution:"approved",count:22,approved_at:"2025-12-30 14:41",approved_by:"Beckie McClain",  rejected_at:"",   rejected_by:""},
+        {org:"My Garage - Midlothian (Dec 1)",inserted:"2025-12-01 20:15",resolution:"pending", count:16, approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Storage Sense - Sulphur (Dec 1)",inserted:"2025-12-01 20:14",resolution:"approved",count:13,approved_at:"2026-03-05 14:50",approved_by:"Beckie McClain",  rejected_at:"",   rejected_by:""},
+        {org:"Storage Sense - Huntsville (Dec 1)",inserted:"2025-12-01 18:18",resolution:"approved",count:23,approved_at:"2025-12-18 22:55",approved_by:"Beckie McClain",rejected_at:"",  rejected_by:""},
+        {org:"Appletree Storage - Gonzales (Dec 1)",inserted:"2025-12-01 02:45",resolution:"rejected",count:18,approved_at:"",         approved_by:"",                 rejected_at:"2025-12-01 13:38",rejected_by:"Hari Sundar"},
+        {org:"Storage Sense - Port Arthur (Dec 1 rejected)",inserted:"2025-12-01 02:36",resolution:"rejected",count:53,approved_at:"",  approved_by:"",                 rejected_at:"2025-12-01 15:08",rejected_by:"Fayad Contract"},
+        {org:"Attic Storage Aspen Creek",   inserted:"2025-11-30 17:04",resolution:"pending",  count:22,  approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Attic Storage Peculiar",      inserted:"2025-11-30 16:30",resolution:"approved", count:667, approved_at:"2025-12-06 19:59",approved_by:"Facility Manager", rejected_at:"",   rejected_by:""},
+        {org:"Attic Storage Lake Lotawana", inserted:"2025-11-30 16:00",resolution:"pending",  count:263, approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Storage Sense - Port Arthur (Nov 30)",inserted:"2025-11-30 06:40",resolution:"rejected",count:15,approved_at:"",         approved_by:"",                 rejected_at:"2025-12-01 15:09",rejected_by:"Fayad Contract"},
+        {org:"Storage Sense - Sulphur (Nov 30)",inserted:"2025-11-30 06:31",resolution:"rejected",count:13,approved_at:"",             approved_by:"",                 rejected_at:"2025-12-01 15:13",rejected_by:"Fayad Contract"},
+        {org:"GuardBox Storage - Troy (Nov 30)",inserted:"2025-11-30 06:25",resolution:"approved",count:11,approved_at:"2025-12-01 14:28",approved_by:"Fayad Contract", rejected_at:"",   rejected_by:""},
+        {org:"Available Self Storage (Nov 30)",inserted:"2025-11-30 06:23",resolution:"rejected",count:12,approved_at:"",              approved_by:"",                 rejected_at:"2025-12-01 13:58",rejected_by:"Fayad Contract"},
+        {org:"Storage Sense - Huntsville (Nov 30)",inserted:"2025-11-30 06:19",resolution:"rejected",count:14,approved_at:"",          approved_by:"",                 rejected_at:"2025-12-01 15:07",rejected_by:"Fayad Contract"},
+        {org:"Castle Self Storage - Plymouth",inserted:"2025-11-30 02:22",resolution:"approved",count:117,approved_at:"2025-12-08 22:03",approved_by:"Facility Manager", rejected_at:"",  rejected_by:""},
+        {org:"Attic Storage of Platte County",inserted:"2025-11-29 22:28",resolution:"pending", count:898, approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"US Storage Centers Tarrytown (a)",inserted:"2025-11-29 18:20",resolution:"pending",count:15, approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Attic Storage Bixby",         inserted:"2025-11-29 18:10",resolution:"pending",  count:15,  approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"US Storage Centers Tarrytown (b)",inserted:"2025-11-29 17:36",resolution:"pending",count:12, approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Attic Storage Oak Grove",     inserted:"2025-11-29 16:30",resolution:"approved", count:541, approved_at:"2026-03-19 19:29",approved_by:"Facility Manager", rejected_at:"",   rejected_by:""},
+        {org:"Pioneer Valley - Amherst (a)",inserted:"2025-11-29 02:55",resolution:"rejected", count:10,  approved_at:"",            approved_by:"",                 rejected_at:"2025-12-01 14:33",rejected_by:"Fayad Contract"},
+        {org:"Storage Sense - Saraland",    inserted:"2025-11-29 02:55",resolution:"rejected", count:11,  approved_at:"",            approved_by:"",                 rejected_at:"2025-12-01 15:12",rejected_by:"Fayad Contract"},
+        {org:"Storage Sense - Port Arthur (Nov 29)",inserted:"2025-11-29 02:36",resolution:"rejected",count:25,approved_at:"",        approved_by:"",                 rejected_at:"2025-12-01 15:09",rejected_by:"Fayad Contract"},
+        {org:"Rent-A-Space - Roanoke (Nov 29a)",inserted:"2025-11-29 02:36",resolution:"rejected",count:21,approved_at:"",           approved_by:"",                 rejected_at:"2025-11-29 16:13",rejected_by:"Christine Cieri"},
+        {org:"Storage Sense - San Marcos (Nov 29)",inserted:"2025-11-29 02:36",resolution:"rejected",count:11,approved_at:"",         approved_by:"",                 rejected_at:"2025-12-01 15:11",rejected_by:"Fayad Contract"},
+        {org:"Storage Sense - Sulphur (Nov 29)",inserted:"2025-11-29 02:35",resolution:"rejected",count:14,approved_at:"",            approved_by:"",                 rejected_at:"2025-12-01 15:13",rejected_by:"Fayad Contract"},
+        {org:"Pioneer Valley - Amherst (b)",inserted:"2025-11-29 02:35",resolution:"rejected", count:54,  approved_at:"",            approved_by:"",                 rejected_at:"2025-12-01 14:35",rejected_by:"Fayad Contract"},
+        {org:"Pioneer Valley - Stadium",    inserted:"2025-11-29 02:35",resolution:"rejected", count:10,  approved_at:"",            approved_by:"",                 rejected_at:"2025-12-01 14:46",rejected_by:"Fayad Contract"},
+        {org:"Appletree Storage - Perkins", inserted:"2025-11-29 02:35",resolution:"rejected", count:11,  approved_at:"",            approved_by:"",                 rejected_at:"2025-12-01 13:56",rejected_by:"Fayad Contract"},
+        {org:"Storage Sense - Theodore",    inserted:"2025-11-29 02:35",resolution:"rejected", count:15,  approved_at:"",            approved_by:"",                 rejected_at:"2025-12-01 15:14",rejected_by:"Fayad Contract"},
+        {org:"Fairless Hills Self Storage", inserted:"2025-11-29 02:30",resolution:"rejected", count:27,  approved_at:"",            approved_by:"",                 rejected_at:"2025-12-01 14:00",rejected_by:"Fayad Contract"},
+        {org:"Rent-A-Space - Roanoke (Nov 29b)",inserted:"2025-11-29 02:28",resolution:"rejected",count:35,approved_at:"",           approved_by:"",                 rejected_at:"2025-12-01 15:04",rejected_by:"Fayad Contract"},
+        {org:"Storage Sense - Bryan",       inserted:"2025-11-29 02:26",resolution:"rejected", count:20,  approved_at:"",            approved_by:"",                 rejected_at:"2025-12-01 15:06",rejected_by:"Fayad Contract"},
+        {org:"SecureSpace Self Storage Signal Hill",inserted:"2025-11-29 02:17",resolution:"pending",count:11,approved_at:"",         approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Storage Sense - Sulphur (Nov 28a)",inserted:"2025-11-28 19:37",resolution:"pending",count:12,approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Available Self Storage (Nov 28)",inserted:"2025-11-28 19:01",resolution:"pending",count:12, approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Storage Sense - Sulphur (Nov 28b)",inserted:"2025-11-28 18:57",resolution:"pending",count:11,approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"GuardBox Storage - Troy (Nov 28a)",inserted:"2025-11-28 18:19",resolution:"pending",count:11,approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Storage Sense - Sulphur (Nov 28c)",inserted:"2025-11-28 17:58",resolution:"pending",count:16,approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Storage Sense - Port Arthur (Nov 28)",inserted:"2025-11-28 17:40",resolution:"pending",count:10,approved_at:"",         approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Storage Sense - San Marcos (Nov 28)",inserted:"2025-11-28 15:38",resolution:"pending",count:15,approved_at:"",          approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"GuardBox Storage - Troy (Nov 28b)",inserted:"2025-11-28 15:38",resolution:"pending",count:10,approved_at:"",            approved_by:"",                 rejected_at:"",            rejected_by:""},
+        {org:"Appletree Storage - Gonzales (Nov 28)",inserted:"2025-11-28 15:19",resolution:"pending",count:19,approved_at:"",        approved_by:"",                 rejected_at:"",            rejected_by:""}
+    ];
+
+    // ── Table rendering ──
+    let currentFilter = 'all';
+    let openRows = new Set();
+
+    function setFilter(f, btn) {
+        currentFilter = f;
+        document.querySelectorAll('.filter-btn').forEach(b => {
+            b.className = 'filter-btn';
+        });
+        btn.classList.add('active-' + f);
+        openRows.clear();
+        renderTable();
+    }
+
+    function formatDate(s) {
+        if (!s) return '—';
+        // s is like "2026-03-19 14:10"
+        const d = new Date(s.replace(' ','T') + ':00Z');
+        if (isNaN(d)) return s;
+        return d.toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric',timeZone:'UTC'})
+             + ' ' + d.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',hour12:true,timeZone:'UTC'});
+    }
+
+    function renderTable() {
+        const search = document.getElementById('search-box').value.toLowerCase();
+        const tbody  = document.getElementById('records-tbody');
+        const filtered = RECORDS.filter(r => {
+            const matchFilter = currentFilter === 'all' || r.resolution === currentFilter;
+            const matchSearch = !search || r.org.toLowerCase().includes(search);
+            return matchFilter && matchSearch;
+        });
+
+        document.getElementById('row-count').textContent = `${filtered.length} records`;
+
+        let html = '';
+        filtered.forEach((r, idx) => {
+            const isOpen = openRows.has(idx);
+            const badgeCls  = `badge-${r.resolution}`;
+            const badgeLbl  = r.resolution.charAt(0).toUpperCase() + r.resolution.slice(1);
+            const resolvedBy = r.resolution === 'approved' ? r.approved_by : r.resolution === 'rejected' ? r.rejected_by : '—';
+            const resolvedAt = r.resolution === 'approved' ? r.approved_at : r.resolution === 'rejected' ? r.rejected_at : '';
+            const resolvedAtFmt = resolvedAt ? formatDate(resolvedAt) : '—';
+
+            const hasDetail = r.resolution !== 'pending' && (resolvedBy || resolvedAt);
+
+            html += `<tr onclick="toggleRow(${idx})" style="border-bottom:${isOpen?'none':''}">
+                <td><i class="fas fa-chevron-right toggle-icon${hasDetail ? (isOpen?' open':'') : ' opacity-25'}"></i></td>
+                <td style="font-weight:600;max-width:220px;">${r.org}</td>
+                <td style="color:#6c757d;white-space:nowrap;">${r.inserted}</td>
+                <td class="text-center" style="font-weight:700;">${r.count.toLocaleString()}</td>
+                <td class="text-center"><span class="${badgeCls}">${badgeLbl}</span></td>
+                <td style="color:#495057;">${resolvedBy || '—'}</td>
+                <td style="color:#6c757d;white-space:nowrap;font-size:0.78rem;">${resolvedAtFmt}</td>
+            </tr>`;
+
+            if (isOpen && hasDetail) {
+                let detailHtml = '<div class="detail-grid">';
+                if (r.resolution === 'approved') {
+                    detailHtml += `
+                        <div class="detail-item">
+                            <span class="detail-label">Approved by</span>
+                            <span class="detail-value approved-color"><i class="fas fa-user-check me-1"></i>${r.approved_by || '—'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Approved at</span>
+                            <span class="detail-value approved-color"><i class="fas fa-calendar-check me-1"></i>${r.approved_at ? formatDate(r.approved_at) : '—'}</span>
+                        </div>`;
+                } else if (r.resolution === 'rejected') {
+                    detailHtml += `
+                        <div class="detail-item">
+                            <span class="detail-label">Rejected by</span>
+                            <span class="detail-value rejected-color"><i class="fas fa-user-times me-1"></i>${r.rejected_by || '—'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Rejected at</span>
+                            <span class="detail-value rejected-color"><i class="fas fa-calendar-times me-1"></i>${r.rejected_at ? formatDate(r.rejected_at) : '—'}</span>
+                        </div>`;
+                }
+                detailHtml += '</div>';
+
+                html += `<tr class="expandable-row">
+                    <td colspan="7" style="padding:0 12px 10px 40px;">
+                        <div class="detail-panel">${detailHtml}</div>
+                    </td>
+                </tr>`;
+            }
+        });
+
+        tbody.innerHTML = html || `<tr><td colspan="7" class="text-center text-muted py-4">No records match.</td></tr>`;
+    }
+
+    function toggleRow(idx) {
+        if (openRows.has(idx)) { openRows.delete(idx); }
+        else { openRows.add(idx); }
+        renderTable();
+    }
+
+    renderTable();
+</script>
+</body>
+</html>
