@@ -1,0 +1,470 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>SD QA Automation Roadmap</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: single light report sheet (max 1000px) in the team's sprint-report style — navy header card, tag pills, metric tiles, paired cards, quarter cards. Deliberately single-theme (light). */
+:root{
+  --page:#efefef; --card:#ffffff; --navy:#0d2a4a; --navy-2:#1a3a5a; --muted:#555; --line:#c2ddf0; --line-soft:#ddeef8;
+  --blue:#1a6faf; --green:#1e8a4a; --orange:#e67e00; --purple:#7c3aed; --red:#c0392b; --pink:#c0507a; --grey:#9aa7b4;
+  color-scheme:light;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+body{background:var(--page);color:var(--navy);padding-block:16px 32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.page{max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+
+.header-card{background:var(--navy);border-radius:14px;padding:14px 18px;position:relative}
+.top-pill{position:absolute;top:0;left:16px;background:#d4edda;color:#155724;border:1px solid #90d4a0;font-size:10px;font-weight:700;padding:3px 10px 4px;border-radius:0 0 8px 8px}
+.sd-tab{position:absolute;top:0;right:16px;background:#fff;font-size:12px;font-weight:700;padding:3px 13px 5px;border-radius:0 0 9px 9px}
+.sd-r{color:#e8312a}.sd-b{color:#0a1a8a}
+.hdr-row{display:flex;align-items:center;gap:14px;margin-top:16px;flex-wrap:wrap}
+.robot-box{width:46px;height:46px;background:var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.hdr-text{min-width:0;flex:1}
+.hdr-text h1{font-size:19px;font-weight:700;color:#fff}
+.hdr-text p{font-size:11.5px;color:#8ab4d4;margin-top:3px}
+.date-pill{background:var(--green);color:#fff;font-size:11px;font-weight:700;padding:6px 14px;border-radius:20px;white-space:nowrap;border:1px solid #4ab870}
+
+.tags{display:flex;justify-content:center;gap:6px;flex-wrap:wrap}
+.tag{background:#fff;border:1px solid #d0d0d0;border-radius:16px;padding:4px 14px;font-size:10.5px;color:#333;white-space:nowrap;flex:1;text-align:center}
+
+.metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+.mc{border-radius:12px;padding:14px 8px;text-align:center;background:#fff;border:1px solid #ddd;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:86px}
+.mc .n{font-size:25px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.mc .l{font-size:10.5px;margin-top:5px;font-weight:600;color:var(--muted);line-height:1.3}
+
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card{background:#fff;border-radius:12px;padding:14px;border:1px solid var(--line);display:flex;flex-direction:column;gap:9px;min-width:0}
+.card-title{font-size:12.5px;font-weight:700;color:var(--navy);padding-bottom:6px;border-bottom:1px solid var(--line-soft)}
+.sec-title{font-size:14px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:8px;margin-top:6px}
+.sec-title span.s{font-size:11px;font-weight:400;color:var(--muted)}
+
+.pie-flex{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.pie-wrap{position:relative;width:140px;height:140px;flex-shrink:0}
+.pie-c{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+.pie-c .pn{font-size:21px;font-weight:700;color:var(--navy)}
+.pie-c .ps{font-size:9px;color:#6a8aaa}
+.lg-list{display:flex;flex-direction:column;gap:6px;flex:1;min-width:170px}
+.lg{display:flex;align-items:center;gap:7px;border-radius:8px;padding:6px 8px}
+.lg .sw{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+.lg .t1{font-size:10.5px;font-weight:700}
+.lg .t2{font-size:9.5px}
+.lg-b{background:#eaf2ff;border:1px solid #b0cef0}.lg-b .t1{color:#0d2a6a}.lg-b .t2{color:#2a4a8a}
+.lg-o{background:#fff8ee;border:1px solid #ffc880}.lg-o .t1{color:#7a3800}.lg-o .t2{color:#a05000}
+.lg-g{background:#f2f4f6;border:1px solid #d3d9df}.lg-g .t1{color:#2a3a4a}.lg-g .t2{color:#56636f}
+.lg-gr{background:#f2faf2;border:1px solid #b0deb0}.lg-gr .t1{color:#0a4a1a}.lg-gr .t2{color:#1a6a2a}
+.lg-p{background:#f5eeff;border:1px solid #c8a8f0}.lg-p .t1{color:#4a1a8a}.lg-p .t2{color:#5a2a9a}
+
+.bars{padding-top:8px;border-top:1px solid var(--line-soft)}
+.br{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.bl{font-size:10px;color:var(--navy);width:150px;flex-shrink:0;line-height:1.3}
+.bt{background:#e4f2fb;border-radius:100px;height:9px;flex:1;overflow:hidden;position:relative}
+.bf{height:9px;border-radius:100px}
+.bp{font-size:10px;color:#1a5a9a;width:70px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+.eboxes{display:flex;align-items:center;gap:8px}
+.eb{flex:1;border-radius:10px;padding:10px 12px;text-align:center;min-width:0}
+.eb-m{background:#fff2f2;border:1px solid #f5c8c8}
+.eb-a{background:#f2faf2;border:1px solid #b0deb0}
+.eb-b{background:#eaf2ff;border:1px solid #b0cef0}
+.eb .en{font-size:20px;font-weight:700;line-height:1.2;font-variant-numeric:tabular-nums}
+.eb-m .en{color:#7a1010}.eb-a .en{color:#0a4a1a}.eb-b .en{color:#0d2a6a}
+.eb .es{font-size:9.5px;color:#555;margin-top:3px;line-height:1.4}
+.earr{font-size:16px;color:#c090b0;flex-shrink:0}
+
+.bul{list-style:none;display:flex;flex-direction:column;gap:5px}
+.bul li{font-size:11px;color:#1a3a5a;display:block;position:relative;padding-left:13px;line-height:1.45}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.bul li>.dot{position:absolute;left:0;top:.45em}
+.dg{background:var(--green)}.dr{background:var(--red)}.db{background:var(--blue)}.dp{background:var(--purple)}.dm{background:var(--pink)}.do{background:var(--orange)}
+
+.stat-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.stat-strip.four{grid-template-columns:repeat(4,1fr)}
+.sbox{border-radius:8px;padding:8px 6px;text-align:center;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.sbox .sv{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+.sbox .sl{font-size:9px;margin-top:2px;line-height:1.25}
+.sb-g{background:#f2faf2;border:1px solid #b0deb0}.sb-g .sv{color:#0a4a1a}.sb-g .sl{color:#1a6a2a}
+.sb-b{background:#eaedff;border:1px solid #a8b4f0}.sb-b .sv{color:#0a1a6a}.sb-b .sl{color:#2a3a9a}
+.sb-o{background:#fff3e0;border:1px solid #ffcc80}.sb-o .sv{color:#7a3800}.sb-o .sl{color:#a05000}
+.sb-p{background:#ead8ff;border:1px solid #c0a0f0}.sb-p .sv{color:#30087a}.sb-p .sl{color:#5a2a9a}
+.sb-r{background:#fff2f2;border:1px solid #f5c8c8}.sb-r .sv{color:#7a1010}.sb-r .sl{color:#7a2a2a}
+
+.info{border-radius:9px;padding:9px 11px}
+.info .ih{font-size:10px;font-weight:700;margin-bottom:6px}
+.info-b{background:#f0f6ff;border:1px solid #b8d4f8}.info-b .ih{color:var(--navy)}
+.info-o{background:#fff8f0;border:1px solid #ffc880}.info-o .ih{color:#7a3800}
+.info-g{background:#edfbf2;border:1px solid #90d4a8}.info-g .ih{color:#0a4a28}
+.info-p{background:#ede0ff;border:1px solid #c8b8e8}.info-p .ih{color:#30087a}
+
+.chart-box{position:relative;height:230px}
+
+/* quarter cards */
+.qgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.qcard{background:#fff;border-radius:12px;padding:14px;border:1px solid var(--line);display:flex;flex-direction:column;gap:8px;min-width:0}
+.qhead{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-bottom:6px;border-bottom:1px solid var(--line-soft)}
+.qhead .qn{font-size:14px;font-weight:700;color:var(--navy)}
+.qhead .qm{font-size:9.5px;color:var(--muted)}
+.qbadge{font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;color:#fff;white-space:nowrap}
+.lane{border-radius:9px;padding:8px 10px}
+.lane .lh{font-size:10px;font-weight:700;margin-bottom:5px;display:flex;justify-content:space-between;gap:6px}
+.lane .bul li{font-size:10px}
+.lane-api{background:#eaf2ff;border:1px solid #b0cef0}.lane-api .lh{color:#0d2a6a}
+.lane-ui{background:#fff8ee;border:1px solid #ffc880}.lane-ui .lh{color:#7a3800}
+.lane-db{background:#f5eeff;border:1px solid #c8a8f0}.lane-db .lh{color:#4a1a8a}
+.lane-pr{background:#f2faf2;border:1px solid #b0deb0}.lane-pr .lh{color:#0a4a1a}
+.jira{color:#6a7a8a;font-size:9px}
+code{font-family:Consolas,"Courier New",monospace;font-size:.95em;color:#30087a}
+
+/* targets */
+.tg-row{display:grid;grid-template-columns:170px 1fr;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line-soft)}
+.tg-row:last-child{border-bottom:0}
+.tg-l{font-size:10.5px;font-weight:700;color:var(--navy);line-height:1.3}
+.tg-l span{display:block;font-weight:400;color:var(--muted);font-size:9.5px}
+.steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+.step{border-radius:7px;padding:5px 4px;text-align:center;font-variant-numeric:tabular-nums}
+.step .v{font-size:12px;font-weight:700}
+.step .c{font-size:8.5px;margin-top:1px}
+.s0{background:#fff2f2;border:1px solid #f5c8c8;color:#7a1010}
+.s1{background:#eaf2ff;border:1px solid #c8dcf4;color:#0d2a6a}
+.s4{background:#e3f6e8;border:1px solid #90d4a0;color:#0a4a1a}
+.steps-h{display:grid;grid-template-columns:170px 1fr;gap:10px}
+.steps-h .steps div{font-size:9px;font-weight:700;color:var(--muted);text-align:center}
+
+.flow-strip{background:#f8eef6;border:1px solid #e2c8da;border-radius:8px;padding:7px;display:flex;align-items:center;gap:3px}
+.fb{background:#fff;border:1px solid #ddbad0;border-radius:7px;padding:5px 3px;text-align:center;flex:1;min-width:0}
+.fb .fi{font-size:13px;line-height:1}
+.fb .ft{font-size:8.5px;color:#6a2a5a;margin-top:2px;line-height:1.2}
+.fa{font-size:9px;color:#c080a8;flex-shrink:0}
+
+.footer{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:10px;color:#666;padding-top:9px;border-top:1px solid #d8d8d8;align-items:center}
+.fdot{width:7px;height:7px;background:var(--green);border-radius:50%;display:inline-block;margin-right:5px}
+
+@media (max-width:820px){.metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:720px){.row2,.qgrid{grid-template-columns:1fr}.tg-row,.steps-h{grid-template-columns:1fr}.steps-h>span{display:none}}
+@media (max-width:440px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.bl{width:110px}.stat-strip.four{grid-template-columns:repeat(2,1fr)}}
+.dl-btn{max-width:1000px;margin:12px auto 0;display:block;width:100%;text-align:center;background:#0d2a4a;color:#fff;font-size:13px;font-weight:700;padding:11px;border-radius:10px;cursor:pointer;border:none;letter-spacing:.3px}
+.dl-btn:focus-visible{outline:3px solid #8ab4d4;outline-offset:2px}
+.dl-btn:disabled{opacity:.7;cursor:progress}
+.dl-msg{max-width:1000px;margin:6px auto 0;text-align:center;font-size:11px;color:#555}
+</style>
+
+<div class="page">
+
+  <div class="header-card">
+    <div class="top-pill">📊 SDKANBAN-2745</div>
+    <div class="sd-tab"><span class="sd-r">Storage</span><span class="sd-b">Defender</span></div>
+    <div class="hdr-row">
+      <div class="robot-box">🤖</div>
+      <div class="hdr-text">
+        <h1>QA Automation Coverage &amp; 2027 Roadmap</h1>
+        <p>2025 baseline · 2026 progress · 2027 quarterly plan for API, UI and DB validation on QA</p>
+      </div>
+      <div class="date-pill">📅 Data as of 19 Nov 2026</div>
+    </div>
+  </div>
+
+  <div class="tags">
+    <span class="tag">📍 2025 Baseline</span>
+    <span class="tag">📈 2026 Progress</span>
+    <span class="tag">🔌 API · 🖥️ UI · 🗄️ DB</span>
+    <span class="tag">🗓️ 2027 Quarterly Plan</span>
+  </div>
+
+  <div class="metrics">
+    <div class="mc"><div class="n" style="color:#1a2a3a">3,123</div><div class="l">QMetry test cases</div></div>
+    <div class="mc"><div class="n" style="color:#1a6faf">1,750</div><div class="l">Automatable cases</div></div>
+    <div class="mc"><div class="n" style="color:#1e8a4a">793 ✅</div><div class="l">Nightly automated tests</div></div>
+    <div class="mc"><div class="n" style="color:#1a6faf">45.3% 🎯</div><div class="l">Automated vs automatable</div></div>
+    <div class="mc"><div class="n" style="color:#1e8a4a">95.6%</div><div class="l">Nightly pass rate<br>(758 / 793)</div></div>
+    <div class="mc"><div class="n" style="color:#e67e00">1,139</div><div class="l">Cases yet to automate</div></div>
+  </div>
+
+  <!-- 2025 vs 2026 -->
+  <div class="sec-title">📍 Where we were in 2025 → 📈 where we are now <span class="s">QMetry + nightly run</span></div>
+  <div class="row2">
+
+    <div class="card">
+      <div class="card-title">⚖️ End of 2025 vs now (Nov 2026)</div>
+      <div class="eboxes">
+        <div class="eb eb-m"><div class="en">239</div><div class="es">Nightly tests · Dec 2025<br>all UI, no API, no DB</div></div>
+        <div class="earr">→</div>
+        <div class="eb eb-a"><div class="en">793 🚀</div><div class="es">Nightly tests · Nov 2026<br>3.3× growth (+554)</div></div>
+      </div>
+      <div class="bars">
+        <div class="br"><span class="bl">Automated vs automatable · 2025</span><div class="bt"><div class="bf" style="width:32.5%;background:#9aa7b4"></div></div><span class="bp">32.5%</span></div>
+        <div class="br"><span class="bl">Automated vs automatable · 2026</span><div class="bt"><div class="bf" style="width:45.3%;background:#1e8a4a"></div></div><span class="bp">45.3%</span></div>
+        <div class="br"><span class="bl">Automated vs all cases · 2025</span><div class="bt"><div class="bf" style="width:17.7%;background:#9aa7b4"></div></div><span class="bp">17.7%</span></div>
+        <div class="br"><span class="bl">Automated vs all cases · 2026</span><div class="bt"><div class="bf" style="width:25.4%;background:#1a6faf"></div></div><span class="bp">25.4%</span></div>
+      </div>
+      <div class="stat-strip four">
+        <div class="sbox sb-o"><div class="sv">1,347 → 3,123</div><div class="sl">QMetry cases</div></div>
+        <div class="sbox sb-b"><div class="sv">735 → 1,750</div><div class="sl">Automatable</div></div>
+        <div class="sbox sb-g"><div class="sv">0 → 242</div><div class="sl">API nightly tests</div></div>
+        <div class="sbox sb-p"><div class="sv">0 → 5</div><div class="sl">DB tables checked</div></div>
+      </div>
+      <ul class="bul">
+        <li><span class="dot db"></span>2025 started with ~10 Playwright tests; Cucumber framework from Sep 2025; 240 scenarios by 31 Dec</li>
+        <li><span class="dot dg"></span>2026: API automation started (242 nightly API tests) and the nightly suite grew 3.3×</li>
+        <li><span class="dot dr"></span>Nightly pass rate recovered from <strong>49.9%</strong> (22 Sep) to <strong>95.6%</strong> after locator fixes ✅</li>
+        <li><span class="dot do"></span>QMetry grew faster than automation: <strong>+1,776</strong> new cases written in 2026</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🥧 QMetry test cases now — total (3,123)</div>
+      <div class="pie-flex">
+        <div class="pie-wrap"><canvas id="pieNow" width="140" height="140"></canvas><div class="pie-c"><div class="pn">3,123</div><div class="ps">cases</div></div></div>
+        <div class="lg-list">
+          <div class="lg lg-gr"><span class="sw" style="background:#1e8a4a"></span><div><div class="t1">Automated (script linked)</div><div class="t2">611 cases · 34.9% of automatable</div></div></div>
+          <div class="lg lg-o"><span class="sw" style="background:#e67e00"></span><div><div class="t1">Yet to automate</div><div class="t2">1,139 automatable cases</div></div></div>
+          <div class="lg lg-g"><span class="sw" style="background:#9aa7b4"></span><div><div class="t1">Not automatable</div><div class="t2">1,373 · PMS, hardware, sensors, 2FA, SMS delivery</div></div></div>
+        </div>
+      </div>
+      <div class="bars">
+        <div class="br"><span class="bl">API (GraphQL / REST)</span><div class="bt"><div class="bf" style="width:90.6%;background:#1a6faf"></div></div><span class="bp">345/381 · 91%</span></div>
+        <div class="br"><span class="bl">Alerts, notifications &amp; escalation</span><div class="bt"><div class="bf" style="width:51%;background:#7c3aed"></div></div><span class="bp">206/404 · 51%</span></div>
+        <div class="br"><span class="bl">Front Office (customer UI)</span><div class="bt"><div class="bf" style="width:6.7%;background:#e67e00"></div></div><span class="bp">31/466 · 7%</span></div>
+        <div class="br"><span class="bl">Back Office (admin UI)</span><div class="bt"><div class="bf" style="width:4.7%;background:#c0507a"></div></div><span class="bp">19/405 · 5%</span></div>
+        <div class="br"><span class="bl">Billing &amp; subscriptions</span><div class="bt"><div class="bf" style="width:0%;background:#c0392b"></div></div><span class="bp">0/77 · 0%</span></div>
+      </div>
+      <div class="info info-o">
+        <div class="ih">⚠️ Why Front Office and Back Office look low</div>
+        <ul class="bul"><li><span class="dot do"></span>312 nightly tests (mostly UI) have no QMetry ID yet, so they are not counted here. Linking them is a Q1 2027 quick win.</li></ul>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Trend + dev branches -->
+  <div class="row2">
+    <div class="card">
+      <div class="card-title">📈 Automation trend — automatable cases with a script</div>
+      <div class="chart-box"><canvas id="trend"></canvas></div>
+      <ul class="bul">
+        <li><span class="dot dg"></span>Solid bars = actual · light bars = 2027 plan</li>
+        <li><span class="dot do"></span>The dip after Jun 2026 is new QMetry cases outpacing linked scripts</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔍 Development branches vs QMetry vs QA automation</div>
+      <div class="eboxes">
+        <div class="eb eb-b"><div class="en">22 / 407</div><div class="es">🔌 API operations with<br>direct tests · 5.4%</div></div>
+        <div class="eb eb-a"><div class="en">51 / 116</div><div class="es">🖥️ UI pages tested<br>44.0% (60 incl. partial)</div></div>
+      </div>
+      <div class="stat-strip four">
+        <div class="sbox sb-o"><div class="sv">3,172</div><div class="sl">Dev commits in 2026</div></div>
+        <div class="sbox sb-b"><div class="sv">148</div><div class="sl">New API ops 2026</div></div>
+        <div class="sbox sb-p"><div class="sv">16</div><div class="sl">New UI pages 2026</div></div>
+        <div class="sbox sb-r"><div class="sv">1 / 164</div><div class="sl">New items covered</div></div>
+      </div>
+      <ul class="bul">
+        <li><span class="dot db"></span>QMetry shows API at 91%, but those 345 cases test only <strong>22 operations</strong> in depth. <strong>385</strong> callable operations have no API test.</li>
+        <li><span class="dot dr"></span>None of the 148 API operations added in 2026 has an API test. Only Shipment Log (1 of 16 new pages) has UI tests.</li>
+        <li><span class="dot do"></span>Only 29 of 201 new API operations trace to a Jira story with QMetry cases. Most commits carry no Jira key.</li>
+        <li><span class="dot dp"></span>Development commits in 2026: backend 2,279 (tod_backoffice 1,085) · UI 893 (sd_frontend 530, Backoffice UI 328)</li>
+      </ul>
+      <div class="info info-b">
+        <div class="ih">🧾 Biggest 2026 features with no automation</div>
+        <ul class="bul">
+          <li><span class="dot db"></span>Customer user management / RBAC (SS-71, SS-121) · Outbound webhooks (SD-2498)</li>
+          <li><span class="dot do"></span>Bulk operations (SD-2106) · Device re-ordering (SD-2464) · Partner REST API v1 (SD-2338)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2027 plan -->
+  <div class="sec-title">🗓️ 2027 plan by quarter <span class="s">API · UI · DB validation on the QA environment</span></div>
+  <div class="qgrid">
+
+    <div class="qcard">
+      <div class="qhead"><div><div class="qn">Q1 2027</div><div class="qm">Jan – Mar · new 2026 features first</div></div><span class="qbadge" style="background:#1a6faf">Q1</span></div>
+      <div class="lane lane-api"><div class="lh"><span>🔌 API · 83 operations in scope</span><span>Target +70</span></div><ul class="bul">
+        <li><span class="dot db"></span>Users &amp; contact methods (34) <span class="jira">SS-71 · SS-121 · SD-2106</span></li>
+        <li><span class="dot db"></span>Integrations &amp; outbound webhooks (35) <span class="jira">SD-2498 · SD-1894 · SD-2501</span></li>
+        <li><span class="dot db"></span>Shipment logs &amp; re-ordering (14) <span class="jira">SD-1860 · SD-2464</span></li>
+        <li><span class="dot db"></span>30 remaining QMetry API cases</li></ul></div>
+      <div class="lane lane-ui"><div class="lh"><span>🖥️ UI · 14 pages</span><span>Target +100 cases</span></div><ul class="bul">
+        <li><span class="dot do"></span>Front Office Users / RBAC, invite accept, change password</li>
+        <li><span class="dot do"></span>Re-order confirmation · Facility &amp; org Reports</li>
+        <li><span class="dot do"></span>Backoffice Webhooks &amp; Integrations (5 pages), invite, change password</li></ul></div>
+      <div class="lane lane-db"><div class="lh"><span>🗄️ DB · 11 tables + 2 fixes</span><span>16 total</span></div><ul class="bul">
+        <li><span class="dot dp"></span>Fix 2 broken checks (renters join, task rule columns)</li>
+        <li><span class="dot dp"></span>Tasks, comments, documents · user roles, invites, contact methods</li>
+        <li><span class="dot dp"></span>Webhook subscriptions &amp; deliveries · shipment logs</li></ul></div>
+      <div class="lane lane-pr"><div class="lh"><span>⚙️ Process</span></div><ul class="bul">
+        <li><span class="dot dg"></span>Link the 312 nightly tests that have no QMetry ID</li>
+        <li><span class="dot dg"></span>Jira key required in every PR · QMetry cases tagged API / UI / DB per story</li></ul></div>
+    </div>
+
+    <div class="qcard">
+      <div class="qhead"><div><div class="qn">Q2 2027</div><div class="qm">Apr – Jun · billing &amp; organizations</div></div><span class="qbadge" style="background:#e67e00">Q2</span></div>
+      <div class="lane lane-api"><div class="lh"><span>🔌 API · 95 operations in scope</span><span>Target +75</span></div><ul class="bul">
+        <li><span class="dot db"></span>Billing accounts, products &amp; charges (50) <span class="jira">SD-2513 · SD-2282</span></li>
+        <li><span class="dot db"></span>Organizations, facilities, zones &amp; responders (45) <span class="jira">SD-2326 · SD-2106</span></li>
+        <li><span class="dot db"></span>28 remaining QMetry API cases → 100%</li></ul></div>
+      <div class="lane lane-ui"><div class="lh"><span>🖥️ UI · 16 pages</span><span>Target +110 cases</span></div><ul class="bul">
+        <li><span class="dot do"></span>Management Summary (6 pages, incl. Move-In Sources SD-2207) + trend report</li>
+        <li><span class="dot do"></span>Backoffice Device Config (5 pages) <span class="jira">SS-116 · SS-111</span></li>
+        <li><span class="dot do"></span>Backoffice Account sub-pages (4)</li></ul></div>
+      <div class="lane lane-db"><div class="lh"><span>🗄️ DB · 8 tables</span><span>24 total</span></div><ul class="bul">
+        <li><span class="dot dp"></span>Products, organization products, subscriptions, billing events, account organizations</li>
+        <li><span class="dot dp"></span>Organization details, unit types, facility quality status</li></ul></div>
+    </div>
+
+    <div class="qcard">
+      <div class="qhead"><div><div class="qn">Q3 2027</div><div class="qm">Jul – Sep · reports, roles, tasks</div></div><span class="qbadge" style="background:#7c3aed">Q3</span></div>
+      <div class="lane lane-api"><div class="lh"><span>🔌 API · 102 operations in scope</span><span>Target +75</span></div><ul class="bul">
+        <li><span class="dot db"></span>Reports &amp; dashboards (38) <span class="jira">SD-2371 · SD-2207</span></li>
+        <li><span class="dot db"></span>Auth, roles &amp; features incl. escalation matrix (31)</li>
+        <li><span class="dot db"></span>Tasks &amp; task rules (19) <span class="jira">SD-2028</span> · Notifications (14)</li></ul></div>
+      <div class="lane lane-ui"><div class="lh"><span>🖥️ UI · 13 pages</span><span>Target +110 cases</span></div><ul class="bul">
+        <li><span class="dot do"></span>Mobile overlock &amp; pre-install (4) <span class="jira">SD-1891 · SD-2102 · SD-2213</span></li>
+        <li><span class="dot do"></span>Dashboard drill-downs: incident disposition, vacant unit, human behaviour</li>
+        <li><span class="dot do"></span>Inventory (2), zone devices, climate history, missed devices, resolve notification</li></ul></div>
+      <div class="lane lane-db"><div class="lh"><span>🗄️ DB · 9 tables</span><span>33 total</span></div><ul class="bul">
+        <li><span class="dot dp"></span>Incidents &amp; sequences · escalation matrix features</li>
+        <li><span class="dot dp"></span>Responders, notifications, bulk notifications, audit log</li></ul></div>
+    </div>
+
+    <div class="qcard">
+      <div class="qhead"><div><div class="qn">Q4 2027</div><div class="qm">Oct – Dec · devices &amp; partner API</div></div><span class="qbadge" style="background:#1e8a4a">Q4</span></div>
+      <div class="lane lane-api"><div class="lh"><span>🔌 API · 105 operations in scope</span><span>Target +65</span></div><ul class="bul">
+        <li><span class="dot db"></span>Devices, gateways &amp; config profiles (30)</li>
+        <li><span class="dot db"></span>Partner REST API v1 (29) + its GraphQL (8) <span class="jira">SD-2338</span></li>
+        <li><span class="dot db"></span>SSO (5) <span class="jira">SS-122 · SS-149</span> · token links (5) · inbound webhooks (14) · test sessions &amp; incidents (14)</li></ul></div>
+      <div class="lane lane-ui"><div class="lh"><span>🖥️ UI · 14 pages + 8 deepened</span><span>Target +100 cases</span></div><ul class="bul">
+        <li><span class="dot do"></span>Audit Log (both apps), Products, Backoffice incidents, Hawkeye</li>
+        <li><span class="dot do"></span>Org tabs: add child, accounts, data protection, CS automation</li>
+        <li><span class="dot do"></span>Backoffice notification pages · finish 8 partly tested pages</li></ul></div>
+      <div class="lane lane-db"><div class="lh"><span>🗄️ DB · 6 tables</span><span>39 total</span></div><ul class="bul">
+        <li><span class="dot dp"></span>Devices, device assignments &amp; history · gateways &amp; assignments</li></ul></div>
+    </div>
+
+  </div>
+
+  <!-- Targets -->
+  <div class="row2">
+    <div class="card" style="grid-column:1 / -1">
+      <div class="card-title">🎯 Cumulative 2027 targets — now → end of each quarter</div>
+      <div class="steps-h"><span></span><div class="steps"><div>Now</div><div>Q1 2027</div><div>Q2 2027</div><div>Q3 2027</div><div>Q4 2027</div></div></div>
+      <div id="targets"></div>
+      <div class="info info-g">
+        <div class="ih">🚦 Rule for new development in 2027</div>
+        <ul class="bul"><li><span class="dot dg"></span>Every new API operation or page on a development branch gets QMetry cases and an automated test in the same sprint, plus a DB check wherever it writes data. This keeps the backlog from growing while the plan clears it.</li></ul>
+      </div>
+      <div class="flow-strip">
+        <div class="fb"><div class="fi">🧩</div><div class="ft">Dev story<br>(Jira key)</div></div><span class="fa">▶</span>
+        <div class="fb"><div class="fi">📝</div><div class="ft">QMetry case<br>API / UI / DB</div></div><span class="fa">▶</span>
+        <div class="fb"><div class="fi">🔌</div><div class="ft">API test</div></div><span class="fa">▶</span>
+        <div class="fb"><div class="fi">🖥️</div><div class="ft">UI test</div></div><span class="fa">▶</span>
+        <div class="fb"><div class="fi">🗄️</div><div class="ft">DB check</div></div><span class="fa">▶</span>
+        <div class="fb"><div class="fi">📊</div><div class="ft">Nightly<br>report</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row2">
+    <div class="card">
+      <div class="card-title">🗄️ DB validation on QA — today</div>
+      <div class="stat-strip">
+        <div class="sbox sb-p"><div class="sv">68</div><div class="sl">Core backend tables</div></div>
+        <div class="sbox sb-g"><div class="sv">5</div><div class="sl">Checked today</div></div>
+        <div class="sbox sb-r"><div class="sv">2</div><div class="sl">Checks to fix</div></div>
+      </div>
+      <ul class="bul">
+        <li><span class="dot dg"></span>Checked today: users, task rules, billing accounts, billing account users, organizations</li>
+        <li><span class="dot dr"></span>The renters check joins a table name that doesn't exist (<code>billing_account_organizations</code>)</li>
+        <li><span class="dot dr"></span>The task rule check reads columns replaced in Nov 2025 (<code>recurrence</code>, <code>task_type</code>)</li>
+        <li><span class="dot dp"></span>Both will be confirmed on the QA database before fixing</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 Assumptions</div>
+      <ul class="bul">
+        <li><span class="dot db"></span><strong>Capacity:</strong> same team size as 2026 (≈50 new nightly tests a month)</li>
+        <li><span class="dot do"></span><strong>Not automatable:</strong> PMS integrations, camera/hardware, sensors, 2FA/OTP/CAPTCHA, SMS delivery, visual-only, device telemetry</li>
+        <li><span class="dot dg"></span><strong>Nightly tests vs cases:</strong> one case can be several nightly tests; the 2027 plan counts QMetry cases</li>
+        <li><span class="dot dp"></span><strong>API coverage</strong> counts direct API tests only, not calls the browser makes during UI tests</li>
+        <li><span class="dot dm"></span><strong>Plan %</strong> uses today's 1,750 automatable cases; new 2027 cases follow the same-sprint rule</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span><span class="fdot"></span>QA Automation · SDKANBAN-2745 · Sources: QMetry SD project, QA_Automation nightly report &amp; git history, development branches of 16 product repos</span>
+    <span>Generated · 19 Nov 2026</span>
+  </div>
+
+</div>
+
+<button class="dl-btn" id="dlBtn" type="button" hidden>⬇ Download PNG</button>
+<p class="dl-msg" id="dlMsg" hidden></p>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+(function(){
+  var targets=[
+    {l:"API operations tested",s:"of 407",v:["22 · 5.4%","92 · 22.6%","167 · 41.0%","242 · 59.5%","307 · 75.4%"]},
+    {l:"QMetry API cases",s:"of 403",v:["345 · 85.6%","375 · 93.1%","403 · 100%","403 · 100%","403 · 100%"]},
+    {l:"UI pages fully tested",s:"of 116",v:["51 · 44.0%","65 · 56.0%","81 · 69.8%","94 · 81.0%","108 · 93.1%"]},
+    {l:"QMetry UI cases",s:"of 1,347",v:["266 · 19.7%","366 · 27.2%","476 · 35.3%","586 · 43.5%","686 · 50.9%"]},
+    {l:"DB tables validated",s:"of 68",v:["5 · 7.4%","16 · 23.5%","24 · 35.3%","33 · 48.5%","39 · 57.4%"]},
+    {l:"All automatable QMetry cases",s:"of 1,750",v:["611 · 34.9%","741 · 42.3%","879 · 50.2%","989 · 56.5%","1,089 · 62.2%"]}
+  ];
+  var host=document.getElementById("targets"),html="";
+  targets.forEach(function(t){
+    html+='<div class="tg-row"><div class="tg-l">'+t.l+'<span>'+t.s+'</span></div><div class="steps">';
+    t.v.forEach(function(x,i){var p=x.split(" · ");html+='<div class="step '+(i===0?"s0":i===4?"s4":"s1")+'"><div class="v">'+p[1]+'</div><div class="c">'+p[0]+'</div></div>';});
+    html+='</div></div>';
+  });
+  host.innerHTML=html;
+
+  if(!window.Chart) return;
+  new Chart(document.getElementById("pieNow"),{type:"doughnut",
+    data:{labels:["Automated (linked)","Yet to automate","Not automatable"],datasets:[{data:[611,1139,1373],backgroundColor:["#1e8a4a","#e67e00","#9aa7b4"],borderColor:"#fff",borderWidth:2}]},
+    options:{responsive:false,cutout:"58%",plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return " "+c.label+": "+c.parsed.toLocaleString();}}}}}});
+
+  var labels=["Dec 25","Mar 26","Jun 26","Sep 26","Nov 26","Mar 27","Jun 27","Sep 27","Dec 27"];
+  var vals=[9.1,27.8,39.8,37.3,34.9,42.3,50.2,56.5,62.2];
+  var counts=["67 / 735","283 / 1,017","557 / 1,401","611 / 1,639","611 / 1,750","741 / 1,750","879 / 1,750","989 / 1,750","1,089 / 1,750"];
+  new Chart(document.getElementById("trend"),{type:"bar",
+    data:{labels:labels,datasets:[{data:vals,backgroundColor:vals.map(function(_,i){return i<5?"#1a6faf":"#9ec5f4";}),borderRadius:4,borderSkipped:"start",maxBarThickness:34}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{title:function(c){return c[0].label+(c[0].dataIndex>4?" (plan)":"");},label:function(c){return " "+c.parsed.y+"% · "+counts[c.dataIndex]+" cases";}}}},
+      scales:{y:{beginAtZero:true,max:70,ticks:{callback:function(v){return v+"%";},color:"#555",font:{size:10}},grid:{color:"#eef2f6"}},x:{ticks:{color:"#0d2a4a",font:{size:10}},grid:{display:false}}}},
+    plugins:[{id:"labels",afterDatasetsDraw:function(ch){var ctx=ch.ctx,m=ch.getDatasetMeta(0);ctx.save();ctx.font="bold 10px Arial";ctx.fillStyle="#0d2a4a";ctx.textAlign="center";[0,4,8].forEach(function(i){var b=m.data[i];ctx.fillText(vals[i]+"%",b.x,b.y-5);});ctx.restore();}}]
+  });
+})();
+</script>
+<script>
+(function(){
+  var btn=document.getElementById("dlBtn"),msg=document.getElementById("dlMsg"),FILE="QA_Automation_Roadmap_2027.png",downloads=null;
+  function say(t){msg.textContent=t;msg.hidden=!t;}
+  function render(){
+    return html2canvas(document.querySelector(".page"),{scale:2,useCORS:true,backgroundColor:"#efefef",logging:false})
+      .then(function(cv){return new Promise(function(res,rej){cv.toBlob(function(b){b?res(b):rej(new Error("empty"));},"image/png");});});
+  }
+  btn.addEventListener("click",function(){
+    if(!window.html2canvas){say("PNG export could not load. Check your internet connection and reload.");return;}
+    btn.disabled=true;btn.textContent="Generating…";say("");
+    render().then(function(blob){
+      if(downloads) return downloads.save({filename:FILE,data:blob}).then(function(r){if(r&&r.status==="saved")say("Saved "+FILE+".");});
+      var a=document.createElement("a");a.download=FILE;a.href=URL.createObjectURL(blob);a.click();
+    }).catch(function(e){
+      var c=e&&e.code;
+      if(c==="declined") say("");
+      else if(c==="rate_limited") say("A save prompt is already open. Try again in a moment.");
+      else if(c){btn.hidden=true;say("Saving files isn't available in this view.");}
+      else say("The PNG could not be generated. Reload the page and try again.");
+    }).then(function(){btn.disabled=false;btn.textContent="⬇ Download PNG";});
+  });
+  if(window.claude&&typeof window.claude.use==="function"){
+    window.claude.use("downloads").then(function(d){downloads=d;btn.hidden=!d;}).catch(function(){btn.hidden=true;});
+  } else {
+    btn.hidden=false;
+  }
+})();
+</script>
+
+</body></html>
